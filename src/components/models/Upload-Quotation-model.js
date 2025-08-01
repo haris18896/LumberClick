@@ -29,7 +29,6 @@ const QuotationModel = ({
   isQuotation,
   setIsQuotation,
 }) => {
-  console.log('isQuotation : ', isQuotation);
   return (
     <ModalView open={visible} title={title} toggleModal={onCancel}>
       <ColumCenter>

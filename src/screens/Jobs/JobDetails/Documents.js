@@ -18,10 +18,12 @@ import {
 // ** Third Party Packages
 import moment from 'moment';
 import RNFS from 'react-native-fs';
+import Pdf from 'react-native-pdf';
 import { WebView } from 'react-native-webview';
 import { useDispatch, useSelector } from 'react-redux';
 import { pick, types } from '@react-native-documents/picker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import ReactNativeBlobUtil from 'react-native-blob-util';
 
 // ** Utils
 import { getStatusColor } from '../../../utils/jobUtils';
@@ -69,7 +71,6 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
   const DownloadButtonFlex =
     role === jobData.paymentBy || isSalesman ? 0.48 : 1;
 
-  // ** Helper function to decode file names
   const getDecodedFileName = fileName => {
     try {
       return decodeURIComponent(fileName || '');
@@ -93,7 +94,6 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
       const result = await downloadFile(document.filePath);
 
       if (result) {
-        // Show appropriate toast
         if (result.exists) {
           showToast({
             title: getDecodedFileName(document.fileName),
@@ -107,9 +107,6 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
             type: 'success',
           });
         }
-
-        setCurrentDocument(document);
-        setPdfModalVisible(true);
       }
     } catch (error) {
       console.error('Error downloading document:', error);
@@ -147,27 +144,22 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
     try {
       setDownloadingAll(true);
 
-      // Show initial toast
       showToast({
         title: 'Download Started',
         message: `Downloading ${jobData.documents.length} files...`,
         type: 'info',
       });
 
-      // Download all documents one by one
       let existingCount = 0;
       let successCount = 0;
       let failedCount = 0;
 
-      // Track file names for reporting
       const succeededFiles = [];
       const existingFiles = [];
       const failedFiles = [];
 
-      // Process each document
       for (const doc of jobData.documents) {
         try {
-          // Show progress toast for larger downloads
           if (jobData.documents.length > 3) {
             showToast({
               title: 'Downloading',
@@ -186,7 +178,6 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
               successCount++;
               succeededFiles.push(getDecodedFileName(doc.fileName));
 
-              // Show individual success toast if there are few files
               if (jobData.documents.length <= 3) {
                 showToast({
                   title: 'File Downloaded',
@@ -204,7 +195,6 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
           failedCount++;
           failedFiles.push(getDecodedFileName(doc.fileName));
 
-          // Show individual error toast if there are few files
           if (jobData.documents.length <= 3) {
             showToast({
               title: 'Download Failed',
@@ -215,17 +205,14 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
         }
       }
 
-      // Create summary toast based on results
       let toastType = 'info';
       let toastTitle = 'Download Summary';
       let toastMessage = '';
 
-      // If we have successful downloads
       if (successCount > 0) {
         toastType = 'success';
         toastTitle = 'Download Complete';
 
-        // For few documents, show detailed file names
         if (jobData.documents.length <= 5) {
           let messageParts = [];
 
@@ -242,9 +229,7 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
           }
 
           toastMessage = messageParts.join('\n');
-        }
-        // For many documents, just show counts
-        else {
+        } else {
           toastMessage = `${successCount} files downloaded successfully`;
 
           if (existingCount > 0) {
@@ -266,9 +251,7 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
         } else {
           toastMessage = `${existingCount} files already exist on device`;
         }
-      }
-      // If there were failures
-      else if (failedCount > 0) {
+      } else if (failedCount > 0) {
         toastType = 'error';
         toastTitle = 'Download Issues';
 
@@ -291,7 +274,6 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
         }
       }
 
-      // Show final summary toast
       showToast({
         title: toastTitle,
         message: toastMessage,
@@ -344,7 +326,6 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
         return;
       }
 
-      // Filter out undefined types and provide fallback
       const validTypes = [
         types.csv,
         types.pdf,
@@ -359,7 +340,6 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
         types.zip,
       ].filter(type => type !== undefined && type !== null);
 
-      // Fallback to common MIME types if no valid types found
       const fallbackTypes = [
         'application/pdf',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -378,7 +358,6 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
         copyTo: 'cachesDirectory',
       };
 
-      // Use validTypes if available, otherwise use fallback
       if (validTypes.length > 0) {
         pickerOptions.type = validTypes;
       } else {
@@ -471,7 +450,6 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
     } catch (error) {
       console.error('Error picking document:', error);
 
-      // Provide more specific error message
       let errorMessage = 'Failed to pick document';
 
       if (error.message) {
@@ -496,6 +474,8 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
   };
 
   const handleViewDocument = document => {
+    console.log('Attempting to view document:', document);
+
     if (
       document.contentType === 'application/pdf' ||
       document.fileName.toLowerCase().endsWith('.pdf')
@@ -511,6 +491,13 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
 
       setCurrentDocument(document);
       setPdfModalVisible(true);
+      setPdfError(false);
+
+      console.log('PDF viewer opened for:', {
+        fileName: document.fileName,
+        filePath: document.filePath,
+        contentType: document.contentType,
+      });
     } else {
       openExternalDocument(document);
     }
@@ -521,21 +508,29 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
       return null;
     }
 
-    const url = currentDocument.filePath;
+    const source = {
+      cache: true,
+      uri: currentDocument.filePath,
+    };
+
+    const onClose = () => {
+      setPdfModalVisible(false);
+      setPdfError(false);
+    };
 
     return (
       <Modal
         visible={pdfModalVisible}
         animationType="slide"
-        onRequestClose={() => setPdfModalVisible(false)}
+        onRequestClose={() => onClose()}
         presentationStyle="overFullScreen"
         statusBarTranslucent={true}
       >
-        <SafeAreaView style={styles.pdfModalContainer}>
+        <View style={styles.pdfModalContainer}>
           <View style={styles.pdfHeader}>
             <TouchableOpacity
               style={styles.closeButton}
-              onPress={() => setPdfModalVisible(false)}
+              onPress={() => onClose()}
             >
               <Icon
                 name="close"
@@ -559,40 +554,65 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
                   The PDF file could not be displayed. You can still download
                   it.
                 </TextItem>
-                <TouchableOpacity
-                  style={styles.downloadButton}
-                  onPress={() => {
-                    setPdfModalVisible(false);
-                    handleDownloadDocument(currentDocument);
-                  }}
-                >
-                  <Icon name="download" size={20} color="#fff" />
-                  <TextItem size={3} color="#fff" style={{ marginLeft: 8 }}>
-                    Download PDF
-                  </TextItem>
-                </TouchableOpacity>
+                <View style={styles.errorButtonsContainer}>
+                  <TouchableOpacity
+                    style={styles.downloadButton}
+                    onPress={() => {
+                      onClose();
+                      handleDownloadDocument(currentDocument);
+                    }}
+                  >
+                    <Icon name="download" size={20} color="#fff" />
+                    <TextItem size={3} color="#fff" style={{ marginLeft: 8 }}>
+                      Download PDF
+                    </TextItem>
+                  </TouchableOpacity>
+                </View>
               </View>
             ) : (
-              <WebView
-                source={{ uri: url }}
-                style={{ flex: 1 }}
-                onLoadEnd={() => {
-                  console.log('PDF loaded');
+              <Pdf
+                source={source}
+                onLoadComplete={(numberOfPages, filePath) => {
+                  console.log(
+                    `PDF loaded successfully: ${numberOfPages} pages`,
+                  );
+                  setPdfError(false);
+                }}
+                onLoadProgress={percent => {
+                  console.log(`PDF loading progress: ${percent}%`);
                 }}
                 onError={error => {
                   console.log('PDF Error:', error);
                   setPdfError(true);
                 }}
-                onPageChanged={(page, pageCount) => {
-                  console.log(`Current page: ${page}/${pageCount}`);
-                }}
                 onPressLink={uri => {
                   console.log(`Link pressed: ${uri}`);
                 }}
+                enablePaging={true}
+                enableAnnotationRendering={true}
+                style={styles.pdfStyle}
+                trustAllCerts={false}
               />
+              // <WebView
+              //   source={{ uri: url }}
+              //   style={{ flex: 1 }}
+              //   onLoadEnd={() => {
+              //     console.log('PDF loaded');
+              //   }}
+              //   onError={error => {
+              //     console.log('PDF Error:', error);
+              //     setPdfError(true);
+              //   }}
+              //   onPageChanged={(page, pageCount) => {
+              //     console.log(`Current page: ${page}/${pageCount}`);
+              //   }}
+              //   onPressLink={uri => {
+              //     console.log(`Link pressed: ${uri}`);
+              //   }}
+              // />
             )}
           </View>
-        </SafeAreaView>
+        </View>
       </Modal>
     );
   };
@@ -1098,7 +1118,8 @@ const styles = StyleSheet.create({
   // PDF Modal Styles
   pdfModalContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f0f0f0',
+    paddingTop: AppTheme.WP(10),
   },
   pdfHeader: {
     flexDirection: 'row',
@@ -1132,7 +1153,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: Dimensions.get('window').width,
     height: Dimensions.get('window').height,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#fff',
   },
   pdfLoadingContainer: {
     position: 'absolute',
@@ -1142,11 +1163,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     zIndex: 10,
   },
   loadingText: {
     marginTop: AppTheme.WP(3),
+    textAlign: 'center',
   },
   pdfErrorContainer: {
     flex: 1,
@@ -1162,6 +1184,20 @@ const styles = StyleSheet.create({
   errorMessage: {
     textAlign: 'center',
     marginBottom: AppTheme.WP(4),
+  },
+  errorButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginTop: AppTheme.WP(2),
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2196F3',
+    paddingHorizontal: AppTheme.WP(4),
+    paddingVertical: AppTheme.WP(2.5),
+    borderRadius: AppTheme.WP(2),
   },
   downloadButton: {
     flexDirection: 'row',

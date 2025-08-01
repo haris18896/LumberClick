@@ -9,6 +9,11 @@ import com.facebook.react.ReactNativeHost
 import com.facebook.react.ReactPackage
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.facebook.react.defaults.DefaultReactNativeHost
+// Import ReactNativeBlobUtil utilities
+import com.ReactNativeBlobUtil.ReactNativeBlobUtilUtils
+import javax.net.ssl.X509TrustManager
+import java.security.cert.X509Certificate
+import java.security.cert.CertificateException
 
 class MainApplication : Application(), ReactApplication {
 
@@ -33,6 +38,23 @@ class MainApplication : Application(), ReactApplication {
 
   override fun onCreate() {
     super.onCreate()
+    
+    // Configure trust manager to accept all certificates (disable SSL verification)
+    // This fixes the "Use of own trust manager but none defined" error
+    ReactNativeBlobUtilUtils.sharedTrustManager = object : X509TrustManager {
+      override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {
+        // Accept all client certificates
+      }
+
+      override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {
+        // Accept all server certificates
+      }
+
+      override fun getAcceptedIssuers(): Array<X509Certificate> {
+        return arrayOf()
+      }
+    }
+    
     loadReactNative(this)
   }
 }

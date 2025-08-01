@@ -31,6 +31,7 @@ import { theme as AppTheme } from '../../../@core/infrustructure/theme';
 // ** Custom Components
 import { TextItem } from '../../../styles/typography';
 import { DropDown, Empty } from '../../../@core/components';
+import Pdf from 'react-native-pdf';
 
 const MaterialQuantity = ({ jobId }) => {
   const { materialCount, _3DModel_and_Revision } = useSelector(
@@ -413,6 +414,11 @@ const MaterialQuantity = ({ jobId }) => {
       return null;
     }
 
+    const source = {
+      uri: currentPdfPath,
+      cache: true,
+    };
+
     return (
       <Modal
         visible={pdfModalVisible}
@@ -450,45 +456,25 @@ const MaterialQuantity = ({ jobId }) => {
                 </TextItem>
               </View>
             ) : (
-              <WebView
-                source={{ uri: currentPdfPath }}
-                style={{ flex: 1 }}
-                onLoadEnd={() => {
-                  console.log('PDF loaded');
+              <Pdf
+                source={source}
+                onLoadComplete={(numberOfPages, filePath) => {
+                  console.log(`Number of pages: ${numberOfPages}`);
+                  setPdfError(false);
                 }}
                 onError={error => {
                   console.log('PDF Error:', error);
                   setPdfError(true);
                 }}
-                onPageChanged={(page, pageCount) => {
-                  console.log(`Current page: ${page}/${pageCount}`);
-                }}
                 onPressLink={uri => {
                   console.log(`Link pressed: ${uri}`);
                 }}
+                enablePaging={true}
+                enableAnnotationRendering={true}
+                style={styles.pdfStyle}
+                trustAllCerts={false}
               />
             )}
-            {/* <Pdf
-              source={source}
-              onLoadComplete={(numberOfPages, filePath) => {
-                console.log(`Number of pages: ${numberOfPages}`);
-              }}
-              onError={error => {
-                console.log('PDF Error:', error);
-                showToast({
-                  type: 'error',
-                  title: 'Error',
-                  message: 'Failed to load PDF file',
-                });
-                setPdfModalVisible(false);
-              }}
-              onPressLink={uri => {
-                console.log(`Link pressed: ${uri}`);
-              }}
-              enablePaging={true}
-              enableAnnotationRendering={true}
-              style={styles.pdf}
-            /> */}
           </View>
         </SafeAreaView>
       </Modal>
