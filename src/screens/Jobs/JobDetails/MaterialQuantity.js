@@ -43,8 +43,9 @@ const MaterialQuantity = ({ jobId }) => {
 
   // states
   const [pdfError, setPdfError] = useState(false);
-  const [isPdfLoading, setIsPdfLoading] = useState(false);
+  const [isPdfExportLoading, setIsPdfExportLoading] = useState(false);
   const [isCsvLoading, setIsCsvLoading] = useState(false);
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
   const [pdfModalVisible, setPdfModalVisible] = useState(false);
   const [currentPdfPath, setCurrentPdfPath] = useState(null);
   const [currentPdfName, setCurrentPdfName] = useState('');
@@ -126,10 +127,10 @@ const MaterialQuantity = ({ jobId }) => {
   const renderExportButtons = () => {
     return (
       <View style={styles.exportButtonsContainer}>
-        {/* <TouchableOpacity
+        <TouchableOpacity
           style={[styles.exportButton, styles.viewButton]}
           onPress={handleViewPDF}
-          disabled={isPdfLoading || isCsvLoading}
+          disabled={isPdfExportLoading || isCsvLoading}
         >
           {isPdfLoading ? (
             <ActivityIndicator
@@ -145,13 +146,13 @@ const MaterialQuantity = ({ jobId }) => {
           <TextItem size={3} weight="medium" style={styles.exportButtonText}>
             View PDF
           </TextItem>
-        </TouchableOpacity> */}
+        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.exportButton, styles.pdfButton]}
           onPress={handleExportPDF}
-          disabled={isPdfLoading || isCsvLoading}
+          disabled={isPdfExportLoading || isCsvLoading}
         >
-          {isPdfLoading ? (
+          {isPdfExportLoading ? (
             <ActivityIndicator
               color={AppTheme?.DefaultPalette()?.error?.main}
             />
@@ -170,7 +171,7 @@ const MaterialQuantity = ({ jobId }) => {
         <TouchableOpacity
           style={[styles.exportButton, styles.csvButton]}
           onPress={handleExportCSV}
-          disabled={isPdfLoading || isCsvLoading}
+          disabled={isPdfExportLoading || isCsvLoading}
         >
           {isCsvLoading ? (
             <ActivityIndicator
@@ -254,7 +255,7 @@ const MaterialQuantity = ({ jobId }) => {
   };
 
   const handleExportPDF = async () => {
-    setIsPdfLoading(true);
+    setIsPdfExportLoading(true);
 
     const downloadUrl =
       selectedModel.label === 'All Model'
@@ -289,7 +290,7 @@ const MaterialQuantity = ({ jobId }) => {
         message: 'Failed to download PDF file',
       });
     }
-    setIsPdfLoading(false);
+    setIsPdfExportLoading(false);
   };
 
   const handleExportCSV = async () => {

@@ -67,7 +67,10 @@ const BarHeader = props => {
 
         {onBack && (
           <TouchableOpacity
-            style={styles.leftItem(backIconColor)}
+            style={[
+              styles.leftItem(backIconColor),
+              { marginLeft: AppTheme?.WP(-4) },
+            ]}
             onPress={onBack}
           >
             <Icon
@@ -80,7 +83,7 @@ const BarHeader = props => {
 
         {title && (
           <TextItem size={3.5} color="#666" style={styles.title}>
-            {ellipsisText(title, 25)}
+            {ellipsisText(title, 24)}
           </TextItem>
         )}
       </View>
