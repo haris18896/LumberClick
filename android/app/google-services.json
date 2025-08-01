@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "934525584225",
+    "project_id": "lumberclick-655f3",
+    "storage_bucket": "lumberclick-655f3.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:934525584225:android:caeafba93447d184b83b20",
+        "android_client_info": {
+          "package_name": "com.lumber.click"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEM3kPz-u7wa5WSy3xA_YrRGHsfoAfJqA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
