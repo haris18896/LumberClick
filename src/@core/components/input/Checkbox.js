@@ -2,10 +2,10 @@ import React from 'react';
 
 // ** Third Party Packages
 import PropTypes from 'prop-types';
-import {Checkbox} from 'react-native-paper';
+import { Checkbox } from 'react-native-paper';
 
 // ** Custom Components
-import {CheckBoxLabel, CheckBoxWrapper} from '../../../styles/components';
+import { CheckBoxLabel, CheckBoxWrapper } from '../../../styles/components';
 
 const CheckBox = ({
   state,
@@ -44,4 +44,4 @@ CheckBox.propTypes = {
   position: PropTypes.string,
 };
 
-export {CheckBox};
+export { CheckBox };

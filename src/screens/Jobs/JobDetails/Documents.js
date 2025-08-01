@@ -906,11 +906,7 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
           uploadDocumentHandler(is_quotation === 'checked');
         }}
         isQuotation={is_quotation}
-        setIsQuotation={() =>
-          set_is_quotation(prev =>
-            prev === 'checked' ? 'unchecked' : 'checked',
-          )
-        }
+        setIsQuotation={set_is_quotation}
       />
 
       <PaymentModel
