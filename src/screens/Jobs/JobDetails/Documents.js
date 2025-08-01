@@ -12,6 +12,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 
 // ** Third Party Packages
@@ -333,7 +334,6 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
     setModal('');
     try {
       const accessToken = await getData('token');
-      console.log('uploadDocumentHandler has been hit', accessToken);
 
       if (!accessToken) {
         showToast({
@@ -381,44 +381,48 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
       // Use validTypes if available, otherwise use fallback
       if (validTypes.length > 0) {
         pickerOptions.type = validTypes;
-        console.log('Using valid types for picker');
       } else {
         pickerOptions.type = fallbackTypes;
-        console.log('Using fallback types for picker');
       }
 
       const result = await pick(pickerOptions);
-
-      console.log('Document picker result:', result);
 
       if (result && result[0]) {
         setIsLoading('upload_document_pending');
 
         try {
-          const filePath = (result[0].fileUri || result[0].uri).replace(
-            'file://',
-            '',
-          );
-          const exists = await RNFS.exists(filePath);
-          const decodedPath = decodeURIComponent(filePath);
-          const existsDecoded = await RNFS.exists(decodedPath);
-          if (!existsDecoded) {
-            throw new Error('File does not exist at path: ' + filePath);
+          const originalUri = result[0].fileUri || result[0].uri;
+
+          let fileUri = originalUri;
+          let fileName = result[0].name;
+
+          if (
+            Platform.OS === 'android' &&
+            originalUri.startsWith('content://')
+          ) {
+            fileUri = originalUri;
+            fileName = result[0].name || 'document';
+          } else {
+            const filePath = originalUri.replace('file://', '');
+            const decodedPath = decodeURIComponent(filePath);
+            const existsDecoded = await RNFS.exists(decodedPath);
+            if (!existsDecoded) {
+              throw new Error('File does not exist at path: ' + filePath);
+            }
+            fileUri = existsDecoded ? decodedPath : filePath;
+            fileName = result[0].name || fileName || 'document';
           }
 
           const file = {
-            uri: exists ? filePath : decodedPath,
+            uri: fileUri,
             type: result[0].type,
-            name: decodeURIComponent(result[0].name),
+            name: decodeURIComponent(fileName || 'document'),
           };
 
-          console.log('File:', file);
-          // Create form data
           const formData = new FormData();
           formData.append('file', file);
           formData.append('isQuotation', isQuotation);
 
-          // Make the API call
           const response = await fetch(`${MAIN_URL}/job/upload/${jobId}`, {
             method: 'POST',
             headers: {
@@ -435,18 +439,8 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
           }
 
           const responseData = await response.json();
-          console.log('Upload response:', responseData);
 
           if (responseData.success) {
-            // Decode URL-encoded strings in the response
-            const decodedResponse = {
-              ...responseData,
-              fileName: decodeURIComponent(responseData.fileName),
-              filePath: decodeURIComponent(responseData.filePath),
-              fileKey: decodeURIComponent(responseData.fileKey),
-            };
-            console.log('Decoded response:', decodedResponse);
-
             apiCall();
             showToast({
               title: 'Success',
@@ -456,7 +450,6 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
               type: 'success',
             });
           } else {
-            console.log('check it here 2.');
             showToast({
               title: 'Error',
               message:
@@ -795,7 +788,6 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
               color: AppTheme?.DefaultPalette()?.success?.main,
             })}
             onPress={() => {
-              console.log('pressing 1');
               if (role === jobData.paymentBy && isCustomer) {
                 uploadDocumentHandler(false);
               } else if (role === jobData.paymentBy && isSalesman) {
