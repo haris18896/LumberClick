@@ -22,7 +22,6 @@ import {
   showToast,
   isObjEmpty,
   downloadFile,
-  downloadAndDisplay,
 } from '../../../utils/utils';
 import { MAIN_URL } from '../../../utils/constants';
 import { getData } from '../../../utils/constants';
@@ -334,80 +333,20 @@ const MaterialQuantity = ({ jobId }) => {
     setIsCsvLoading(false);
   };
 
-  const handleViewPDF = async () => {
-    setIsPdfLoading(true);
+  const handleViewPDF = () => {
+    const pdfUrl =
+      selectedModel.label === 'All Model'
+        ? `${Download_All}&type=pdf`
+        : `${Download_By_Floor}&type=pdf&floor=${selectedModel.label}`;
 
-    try {
-      const pdfUrl =
-        selectedModel.label === 'All Model'
-          ? `${Download_All}&type=pdf`
-          : `${Download_By_Floor}&type=pdf&floor=${selectedModel.label}`;
+    const fileName =
+      selectedModel.label === 'All Model'
+        ? 'materials_all'
+        : `materials_${selectedModel.label.toLowerCase().replace(/\s+/g, '_')}`;
 
-      const fileName =
-        selectedModel.label === 'All Model'
-          ? 'materials_all.pdf'
-          : `materials_${selectedModel.label
-              .toLowerCase()
-              .replace(/\s+/g, '_')}.pdf`;
-
-      console.log('check fileName : ', fileName, 'url : ', pdfUrl);
-
-      // Get authentication token
-      const accessToken = await getData('token');
-
-      if (!accessToken) {
-        showToast({
-          type: 'error',
-          title: 'Error',
-          message: 'Authentication token not found',
-        });
-        setIsPdfLoading(false);
-        return;
-      }
-
-      // Check if file already exists
-      const localPath = `${RNFS.DocumentDirectoryPath}/${fileName}`;
-      const fileExists = await RNFS.exists(localPath);
-
-      let finalPath = localPath;
-
-      if (!fileExists) {
-        // Download the PDF with authentication headers using RNFS
-        const downloadResult = await RNFS.downloadFile({
-          fromUrl: pdfUrl,
-          toFile: localPath,
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            accessToken: accessToken,
-          },
-        }).promise;
-
-        if (downloadResult.statusCode !== 200) {
-          throw new Error(
-            `Failed to download PDF: ${downloadResult.statusCode}`,
-          );
-        }
-
-        console.log('PDF downloaded successfully to:', localPath);
-      } else {
-        console.log('PDF already exists locally:', localPath);
-      }
-
-      // Set the local file path for the PDF viewer
-      const displayPath = await downloadAndDisplay(`file://${finalPath}`);
-      setCurrentPdfPath(displayPath);
-      setCurrentPdfName(fileName.replace('.pdf', ''));
-      setPdfModalVisible(true);
-    } catch (error) {
-      console.error('Error downloading PDF:', error);
-      showToast({
-        type: 'error',
-        title: 'Error',
-        message: 'Failed to load PDF file',
-      });
-    } finally {
-      setIsPdfLoading(false);
-    }
+    setCurrentPdfPath(pdfUrl);
+    setCurrentPdfName(fileName);
+    setPdfModalVisible(true);
   };
 
   const PdfViewerModal = () => {
@@ -427,7 +366,7 @@ const MaterialQuantity = ({ jobId }) => {
         onRequestClose={() => setPdfModalVisible(false)}
         presentationStyle="fullScreen"
       >
-        <SafeAreaView style={styles.pdfModalContainer}>
+        <View style={styles.pdfModalContainer}>
           <View style={styles.pdfHeader}>
             <TouchableOpacity
               style={styles.closeButton}
@@ -455,6 +394,20 @@ const MaterialQuantity = ({ jobId }) => {
                   The PDF file could not be displayed. You can still download
                   it.
                 </TextItem>
+                <View style={styles.errorButtonsContainer}>
+                  <TouchableOpacity
+                    style={styles.downloadButton}
+                    onPress={() => {
+                      setPdfModalVisible(false);
+                      handleExportPDF();
+                    }}
+                  >
+                    <Icon name="download" size={20} color="#fff" />
+                    <TextItem size={3} color="#fff" style={{ marginLeft: 8 }}>
+                      Download PDF
+                    </TextItem>
+                  </TouchableOpacity>
+                </View>
               </View>
             ) : (
               <Pdf
@@ -477,7 +430,7 @@ const MaterialQuantity = ({ jobId }) => {
               />
             )}
           </View>
-        </SafeAreaView>
+        </View>
       </Modal>
     );
   };
@@ -709,7 +662,8 @@ const styles = StyleSheet.create({
   },
   pdfModalContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f0f0f0',
+    paddingTop: AppTheme.WP(12),
   },
   pdfHeader: {
     flexDirection: 'row',
@@ -730,6 +684,35 @@ const styles = StyleSheet.create({
   },
   pdfContainer: {
     flex: 1,
+  },
+  pdfErrorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: AppTheme.WP(4),
+  },
+  errorTitle: {
+    marginTop: AppTheme.WP(2),
+    marginBottom: AppTheme.WP(1),
+    textAlign: 'center',
+  },
+  errorMessage: {
+    textAlign: 'center',
+    marginBottom: AppTheme.WP(4),
+  },
+  errorButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginTop: AppTheme.WP(2),
+  },
+  downloadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: AppTheme.WP(4),
+    paddingVertical: AppTheme.WP(2.5),
+    borderRadius: AppTheme.WP(2),
   },
   pdf: {
     flex: 1,

@@ -1119,7 +1119,7 @@ const styles = StyleSheet.create({
   pdfModalContainer: {
     flex: 1,
     backgroundColor: '#f0f0f0',
-    paddingTop: AppTheme.WP(10),
+    paddingTop: AppTheme.WP(12),
   },
   pdfHeader: {
     flexDirection: 'row',
