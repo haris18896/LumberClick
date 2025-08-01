@@ -503,6 +503,8 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
     }
   };
 
+  // console.log('currentDocument : ', JSON.stringify(currentDocument, null, 2));
+
   const PdfViewerModal = () => {
     if (!currentDocument) {
       return null;
@@ -517,6 +519,8 @@ const Documents = ({ apiCall, jobId, isLoading, setIsLoading }) => {
       setPdfModalVisible(false);
       setPdfError(false);
     };
+
+    // console.log('url : ', source?.uri);
 
     return (
       <Modal
