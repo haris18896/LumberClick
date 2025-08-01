@@ -1153,7 +1153,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: Dimensions.get('window').width,
     height: Dimensions.get('window').height,
-    backgroundColor: '#fff',
+    backgroundColor: '#f0f0f0',
   },
   pdfLoadingContainer: {
     position: 'absolute',
