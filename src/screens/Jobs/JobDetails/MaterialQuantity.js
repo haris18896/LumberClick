@@ -126,7 +126,7 @@ const MaterialQuantity = ({ jobId }) => {
   const renderExportButtons = () => {
     return (
       <View style={styles.exportButtonsContainer}>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={[styles.exportButton, styles.viewButton]}
           onPress={handleViewPDF}
           disabled={isPdfExportLoading || isCsvLoading}
@@ -145,7 +145,8 @@ const MaterialQuantity = ({ jobId }) => {
           <TextItem size={3} weight="medium" style={styles.exportButtonText}>
             View PDF
           </TextItem>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
+
         <TouchableOpacity
           style={[styles.exportButton, styles.pdfButton]}
           onPress={handleExportPDF}
